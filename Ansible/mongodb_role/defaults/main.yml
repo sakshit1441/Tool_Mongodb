@@ -1,0 +1,18 @@
+---
+# Ubuntu 22.04 will use official MongoDB repo
+ubuntu_packages: 
+  - mongodb-org
+centos_packages:
+  - mongodb-org
+
+# Service names
+ubuntu_service: "mongod"
+centos_service: "mongod"
+
+# MongoDB version
+mongodb_version: "6.0"
+
+# ADD THESE (required by template)
+mongodb_port: 27017
+mongodb_bind_ip: "0.0.0.0"
+
