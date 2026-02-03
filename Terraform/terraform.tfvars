@@ -1,0 +1,6 @@
+aws_region     = "ap-south-1"
+vpc_cidr       = "10.0.0.0/16"
+subnet_cidr    = "10.0.1.0/24"
+ami_id         = "ami-0f58b397bc5c1f2e8"
+instance_type  = "t3.micro"
+key_name       = "mumbai"
