@@ -33,7 +33,7 @@ resource "aws_security_group" "mongo_sg" {
 }
 
 # MongoDB EC2 Instances in Private Subnets
-----------------------------------------------
+
 resource "aws_instance" "mongo" {
   count                     = length(var.private_subnets)
   ami                       = var.mongo_ami
@@ -49,7 +49,7 @@ resource "aws_instance" "mongo" {
 }
 
 # EFS File System for MongoDB Data
-----------------------------------------
+
 resource "aws_efs_file_system" "mongo_efs" {
   creation_token = "mongo-efs"
   
@@ -63,7 +63,7 @@ resource "aws_efs_file_system" "mongo_efs" {
 }
 
 # EFS Mount Targets in each Private Subnet
--------------------------------------------
+
 resource "aws_efs_mount_target" "mongo_efs_mount" {
   count          = length(var.private_subnets)
   file_system_id = aws_efs_file_system.mongo_efs.id

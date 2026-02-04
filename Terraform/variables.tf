@@ -40,11 +40,10 @@ variable "mongo_instance_type" {
 variable "mongo_ami" {
   description = "AMI ID for MongoDB EC2 instances (Amazon Linux 2)"
   type        = string
-  default     = "ami-0aeeebd8d2ab47354"  # Change if needed
+  default     = "ami-0aeeebd8d2ab47354"
 }
 
 variable "key_name" {
   description = "AWS EC2 Key Pair name for SSH access"
   type        = string
 }
-
