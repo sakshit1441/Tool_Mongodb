@@ -1,0 +1,15 @@
+---
+plugin: amazon.aws.aws_ec2
+regions:
+  - ap-south-1
+
+filters:
+  "tag:Name": mongodb-instance
+
+keyed_groups:
+  - key: tags.Name
+    prefix: tag
+
+hostnames:
+  - private-ip-address
+
