@@ -1,107 +1,25 @@
-# --------------------------
-# Security Groups
-# --------------------------
-variable "sg_bastion_id" {
-  type = string
+variable "vpc_id" {
+  description = "VPC ID where resources will be created"
+  type        = string
 }
 
-variable "sg_mongo_id" {
-  type = string
+variable "private_subnets" {
+  description = "List of private subnet IDs for MongoDB instances"
+  type        = list(string)
 }
 
-# --------------------------
-# Subnets
-# --------------------------
-variable "public_subnet_id" {
-  type = string
+variable "mongo_ami" {
+  description = "AMI ID for MongoDB EC2 instances"
+  type        = string
 }
 
-variable "private_subnet01_id" {
-  type = string
-}
-
-variable "private_subnet02_id" {
-  type = string
-}
-
-# --------------------------
-# EC2 Instances
-# --------------------------
-variable "AMI_ID" {
-  type    = string
-  default = "ami-0d53d72369335a9d6"
-}
-
-variable "instance_type" {
-  type    = string
-  default = "t2.micro"
+variable "mongo_instance_type" {
+  description = "EC2 instance type for MongoDB"
+  type        = string
 }
 
 variable "key_name" {
-  type    = string
-  default = "ansible-key"
-}
-
-variable "bastion_name" {
-  type    = string
-  default = "MongoDB-Bastion"
-}
-
-variable "mongodb01_name" {
-  type    = string
-  default = "MongoDB-01"
-}
-
-variable "mongodb02_name" {
-  type    = string
-  default = "MongoDB-02"
-}
-
-# --------------------------
-# Optional Internal Load Balancer
-# --------------------------
-variable "vpc_id" {
-  type = string
-}
-
-variable "mongo_tg_name" {
-  type    = string
-  default = "mongo-tg"
-}
-
-variable "mongo_lb_name" {
-  type    = string
-  default = "mongo-alb"
-}
-
-variable "ALB_type" {
-  type    = string
-  default = "application"
-}
-
-variable "internal_value" {
-  type    = bool
-  default = true
-}
-
-variable "mongo_lb_port" {
-  type    = string
-  default = "27017"
-}
-
-variable "Target_group_arn" {
-  type = string
-}
-
-variable "ALB_arn" {
-  type = string
-}
-
-variable "private01_vm_id" {
-  type = string
-}
-
-variable "private02_vm_id" {
-  type = string
+  description = "EC2 Key Pair name for SSH access"
+  type        = string
 }
 
