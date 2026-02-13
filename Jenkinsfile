@@ -8,7 +8,7 @@ pipeline {
         SSH_USER = "ubuntu"
         BASTION_HOST = "13.126.235.185"
         PRIVATE_HOST = "10.0.11.137"
-        SSH_CREDENTIAL_ID = "mongo-ssh-key" // Correct Jenkins SSH credential ID
+        SSH_CREDENTIAL_ID = "mongo-ssh-key"  // Correct SSH key from Jenkins credentials
     }
 
     stages {
@@ -49,12 +49,27 @@ pipeline {
             }
         }
 
-        stage('Ansible Ping & Playbook') {
+        stage('Ansible Ping Test') {
             steps {
                 dir("${ANSIBLE_DIR}") {
-                    sshagent([SSH_CREDENTIAL_ID]) {
-                        sh "ansible -i ${INVENTORY} mongodb -m ping -u ${SSH_USER}"
-                        sh "ansible-playbook -i inventory.ini mongo-playbook.yml -u ${SSH_USER}"
+                    sshagent(["${SSH_CREDENTIAL_ID}"]) {
+                        sh """
+                        ansible -i ${INVENTORY} mongodb -m ping \
+                        -u ${SSH_USER} -o StrictHostKeyChecking=no
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Run Ansible Playbook') {
+            steps {
+                dir("${ANSIBLE_DIR}") {
+                    sshagent(["${SSH_CREDENTIAL_ID}"]) {
+                        sh """
+                        ansible-playbook -i ${INVENTORY} mongo-playbook.yml \
+                        -u ${SSH_USER} -o StrictHostKeyChecking=no
+                        """
                     }
                 }
             }
@@ -62,7 +77,7 @@ pipeline {
 
         stage('Deploy via Bastion SSH') {
             steps {
-                sshagent([SSH_CREDENTIAL_ID]) {
+                sshagent(["${SSH_CREDENTIAL_ID}"]) {
                     sh """
                     ssh -A -o StrictHostKeyChecking=no -J ${SSH_USER}@${BASTION_HOST} ${SSH_USER}@${PRIVATE_HOST} << 'ENDSSH'
                         echo "Connected to private server successfully!"
@@ -74,7 +89,6 @@ pipeline {
                 }
             }
         }
-
     }
 
     post {
@@ -85,7 +99,7 @@ pipeline {
             echo 'Pipeline failed. Check the logs above for errors.'
         }
         always {
-            cleanWs()
+            cleanWs() // Clean workspace after build
         }
     }
 }
