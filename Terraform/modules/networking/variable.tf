@@ -1,23 +1,26 @@
 ##########################################################
-# VPC CIDR Block
+# VPC CONFIGURATION
 ##########################################################
+
 variable "vpc_cidr" {
-  description = "CIDR block for the VPC"
+  description = "CIDR block for the MongoDB VPC"
   type        = string
 }
 
 ##########################################################
-# Public Subnet CIDRs
+# PUBLIC SUBNET CONFIGURATION
 ##########################################################
+
 variable "public_subnet_cidrs" {
-  description = "List of CIDR blocks for public subnets"
+  description = "List of CIDR blocks for public subnets (Bastion, NAT Gateway)"
   type        = list(string)
 }
 
 ##########################################################
-# Private Subnet CIDRs
+# PRIVATE SUBNET CONFIGURATION
 ##########################################################
+
 variable "private_subnet_cidrs" {
-  description = "List of CIDR blocks for private subnets"
+  description = "List of CIDR blocks for private subnets (MongoDB, EFS)"
   type        = list(string)
 }

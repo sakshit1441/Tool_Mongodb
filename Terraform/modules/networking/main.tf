@@ -1,11 +1,15 @@
 ##########################################################
-# Get Availability Zones
+# AVAILABILITY ZONES
 ##########################################################
-data "aws_availability_zones" "available" {}
+
+data "aws_availability_zones" "available" {
+  state = "available"
+}
 
 ##########################################################
 # VPC
 ##########################################################
+
 resource "aws_vpc" "mongo_vpc" {
   cidr_block           = var.vpc_cidr
   enable_dns_support   = true
@@ -17,8 +21,9 @@ resource "aws_vpc" "mongo_vpc" {
 }
 
 ##########################################################
-# Internet Gateway
+# INTERNET GATEWAY
 ##########################################################
+
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.mongo_vpc.id
 
@@ -28,8 +33,9 @@ resource "aws_internet_gateway" "igw" {
 }
 
 ##########################################################
-# Public Subnets
+# PUBLIC SUBNETS (FOR BASTION / NAT)
 ##########################################################
+
 resource "aws_subnet" "public" {
   count                   = length(var.public_subnet_cidrs)
   vpc_id                  = aws_vpc.mongo_vpc.id
@@ -43,8 +49,9 @@ resource "aws_subnet" "public" {
 }
 
 ##########################################################
-# Private Subnets
+# PRIVATE SUBNETS (FOR MONGODB + EFS)
 ##########################################################
+
 resource "aws_subnet" "private" {
   count             = length(var.private_subnet_cidrs)
   vpc_id            = aws_vpc.mongo_vpc.id
@@ -57,8 +64,9 @@ resource "aws_subnet" "private" {
 }
 
 ##########################################################
-# Public Route Table and Internet Route
+# PUBLIC ROUTE TABLE
 ##########################################################
+
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.mongo_vpc.id
 
@@ -67,7 +75,7 @@ resource "aws_route_table" "public" {
   }
 }
 
-resource "aws_route" "internet_access" {
+resource "aws_route" "public_internet" {
   route_table_id         = aws_route_table.public.id
   destination_cidr_block = "0.0.0.0/0"
   gateway_id             = aws_internet_gateway.igw.id
@@ -80,8 +88,9 @@ resource "aws_route_table_association" "public_assoc" {
 }
 
 ##########################################################
-# NAT Gateway for Private Subnets
+# NAT GATEWAY (FOR PRIVATE SUBNET INTERNET ACCESS)
 ##########################################################
+
 resource "aws_eip" "nat" {
   
   tags = {
@@ -100,8 +109,9 @@ resource "aws_nat_gateway" "nat" {
 }
 
 ##########################################################
-# Private Route Table and NAT Route
+# PRIVATE ROUTE TABLE
 ##########################################################
+
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.mongo_vpc.id
 
