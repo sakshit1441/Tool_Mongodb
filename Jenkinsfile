@@ -18,7 +18,9 @@ pipeline {
         stage('Terraform Init') {
             steps {
                 dir("${TF_DIR}") {
-                    sh 'terraform init'
+                    withAWS(credentials: 'aws-creds', region: 'ap-south-1') {
+                        sh 'terraform init'
+                    }
                 }
             }
         }
@@ -26,7 +28,9 @@ pipeline {
         stage('Terraform Plan') {
             steps {
                 dir("${TF_DIR}") {
-                    sh 'terraform plan'
+                    withAWS(credentials: 'aws-creds', region: 'ap-south-1') {
+                        sh 'terraform plan'
+                    }
                 }
             }
         }
@@ -34,7 +38,9 @@ pipeline {
         stage('Terraform Apply') {
             steps {
                 dir("${TF_DIR}") {
-                    sh 'terraform apply -auto-approve'
+                    withAWS(credentials: 'aws-creds', region: 'ap-south-1') {
+                        sh 'terraform apply -auto-approve'
+                    }
                 }
             }
         }
@@ -56,3 +62,4 @@ pipeline {
         }
     }
 }
+
