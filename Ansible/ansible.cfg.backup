@@ -3,8 +3,9 @@ inventory = aws_ec2.yml
 host_key_checking = False
 enable_plugins = amazon.aws.aws_ec2
 remote_user = ubuntu
-private_key_file = ~/.ssh/mumbai.pem
+private_key_file = /home/jenkins/.ssh/mumbai
 roles_path = ./mongodb_role
 
 [ssh_connection]
-ssh_args = -o ProxyJump=ubuntu@<BASTION_PUBLIC_IP> -o StrictHostKeyChecking=no
+ssh_args = -o ProxyJump=ubuntu@13.126.235.185 -o StrictHostKeyChecking=no
+
