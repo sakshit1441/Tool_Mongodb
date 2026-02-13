@@ -54,7 +54,7 @@ pipeline {
                 dir("${ANSIBLE_DIR}") {
                     sshagent([SSH_CREDENTIAL_ID]) {
                         sh "ansible -i ${INVENTORY} mongodb -m ping -u ${SSH_USER}"
-                        sh "ansible-playbook -i ${INVENTORY} playbook.yml -u ${SSH_USER}"
+                        sh "ansible-playbook -i inventory.ini mongo-playbook.yml -u ${SSH_USER}"
                     }
                 }
             }
