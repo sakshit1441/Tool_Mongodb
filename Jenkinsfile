@@ -48,12 +48,8 @@ pipeline {
         stage('Ansible Ping Test') {
             steps {
                 dir("${ANSIBLE_DIR}") {
-                    // Using Ansible plugin instead of sshagent
-                    ansible(
-                        inventory: "${INVENTORY}",
-                        module: 'ping',
-                        hosts: 'mongodb'
-                    )
+                    // Using shell command instead of nonexistent ansible() step
+                    sh "ansible -i ${INVENTORY} mongodb -m ping"
                 }
             }
         }
@@ -61,11 +57,11 @@ pipeline {
         stage('Run Ansible Playbook') {
             steps {
                 dir("${ANSIBLE_DIR}") {
-                    // Using Ansible plugin
+                    // Using ansiblePlaybook plugin
                     ansiblePlaybook(
                         playbook: 'playbook.yml',
                         inventory: "${INVENTORY}",
-                        extras: '-u ubuntu' // optional: use your SSH user
+                        extras: '-u ubuntu'  // optional: your SSH user
                     )
                 }
             }
@@ -80,7 +76,7 @@ pipeline {
             echo 'Pipeline failed. Check the logs above for errors.'
         }
         always {
-            cleanWs() // cleans workspace after build
+            cleanWs()
         }
     }
 }
