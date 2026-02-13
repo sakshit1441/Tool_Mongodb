@@ -4,11 +4,9 @@ pipeline {
     environment {
         TF_DIR = "Terraform"
         ANSIBLE_DIR = "Ansible"
-        INVENTORY = "inventory.ini"
+        INVENTORY = "mongodb_inventory.ini"   // match Terraform-generated file
         SSH_USER = "ubuntu"
-        BASTION_HOST = "13.126.235.185"
-        PRIVATE_HOST = "10.0.11.137"
-        SSH_CREDENTIAL_ID = "mongo-ssh-key"  // Correct SSH key from Jenkins credentials
+        SSH_CREDENTIAL_ID = "mongo-ssh-key"   // SSH key stored in Jenkins credentials
     }
 
     stages {
@@ -49,13 +47,28 @@ pipeline {
             }
         }
 
+        stage('Fetch Terraform Outputs') {
+            steps {
+                dir("${TF_DIR}") {
+                    script {
+                        // Fetch Bastion and MongoDB IPs from Terraform
+                        BASTION_HOST = sh(script: "terraform output -raw bastion_public_ip", returnStdout: true).trim()
+                        MONGO_HOSTS = sh(script: "terraform output -json mongo_private_ips", returnStdout: true).trim()
+                        echo "Bastion IP: ${BASTION_HOST}"
+                        echo "MongoDB Hosts: ${MONGO_HOSTS}"
+                    }
+                }
+            }
+        }
+
         stage('Ansible Ping Test') {
             steps {
                 dir("${ANSIBLE_DIR}") {
-                    sshagent(["${SSH_CREDENTIAL_ID}"]) {
+                    sshagent([SSH_CREDENTIAL_ID]) {
                         sh """
                         ansible -i ${INVENTORY} mongodb -m ping \
-                        -u ${SSH_USER} -o StrictHostKeyChecking=no
+                        -u ${SSH_USER} \
+                        -o 'StrictHostKeyChecking=no'
                         """
                     }
                 }
@@ -65,10 +78,11 @@ pipeline {
         stage('Run Ansible Playbook') {
             steps {
                 dir("${ANSIBLE_DIR}") {
-                    sshagent(["${SSH_CREDENTIAL_ID}"]) {
+                    sshagent([SSH_CREDENTIAL_ID]) {
                         sh """
                         ansible-playbook -i ${INVENTORY} mongo-playbook.yml \
-                        -u ${SSH_USER} -o StrictHostKeyChecking=no
+                        -u ${SSH_USER} \
+                        -o 'StrictHostKeyChecking=no'
                         """
                     }
                 }
@@ -77,13 +91,13 @@ pipeline {
 
         stage('Deploy via Bastion SSH') {
             steps {
-                sshagent(["${SSH_CREDENTIAL_ID}"]) {
+                sshagent([SSH_CREDENTIAL_ID]) {
                     sh """
-                    ssh -A -o StrictHostKeyChecking=no -J ${SSH_USER}@${BASTION_HOST} ${SSH_USER}@${PRIVATE_HOST} << 'ENDSSH'
-                        echo "Connected to private server successfully!"
+                    ssh -A -o StrictHostKeyChecking=no -J ${SSH_USER}@${BASTION_HOST} ${SSH_USER}@${MONGO_HOSTS[0]} << 'ENDSSH'
+                        echo "Connected to private MongoDB server successfully!"
                         hostname
                         whoami
-                        # Add your deployment commands here
+                        # Add deployment commands here
                     ENDSSH
                     """
                 }
@@ -103,4 +117,3 @@ pipeline {
         }
     }
 }
-
