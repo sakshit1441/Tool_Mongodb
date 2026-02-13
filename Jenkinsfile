@@ -5,6 +5,8 @@ pipeline {
         TF_DIR = "Terraform"
         ANSIBLE_DIR = "Ansible"
         INVENTORY = "inventory.ini"
+        ANSIBLE_PRIVATE_KEY = "/home/jenkins/.ssh/mumbai" // path to your SSH key
+        SSH_USER = "ubuntu"
     }
 
     stages {
@@ -48,8 +50,11 @@ pipeline {
         stage('Ansible Ping Test') {
             steps {
                 dir("${ANSIBLE_DIR}") {
-                    // Using shell command instead of nonexistent ansible() step
-                    sh "ansible -i ${INVENTORY} mongodb -m ping"
+                    // Test SSH connectivity to MongoDB instances via bastion
+                    sh """
+                        ansible -i ${INVENTORY} mongodb -m ping \
+                        -u ${SSH_USER} --private-key=${ANSIBLE_PRIVATE_KEY}
+                    """
                 }
             }
         }
@@ -57,12 +62,11 @@ pipeline {
         stage('Run Ansible Playbook') {
             steps {
                 dir("${ANSIBLE_DIR}") {
-                    // Using ansiblePlaybook plugin
-                    ansiblePlaybook(
-                        playbook: 'playbook.yml',
-                        inventory: "${INVENTORY}",
-                        extras: '-u ubuntu'  // optional: your SSH user
-                    )
+                    // Run the playbook
+                    sh """
+                        ansible-playbook -i ${INVENTORY} playbook.yml \
+                        -u ${SSH_USER} --private-key=${ANSIBLE_PRIVATE_KEY}
+                    """
                 }
             }
         }
@@ -76,7 +80,7 @@ pipeline {
             echo 'Pipeline failed. Check the logs above for errors.'
         }
         always {
-            cleanWs()
+            cleanWs() // cleans workspace after build
         }
     }
 }
