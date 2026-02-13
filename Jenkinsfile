@@ -49,7 +49,8 @@ pipeline {
             steps {
                 dir("${ANSIBLE_DIR}") {
                     sshagent(credentials: ['mongo-ssh-key']) {
-                        sh 'ansible -i ${INVENTORY} mongodb -m ping'
+                        // Use double quotes for proper variable expansion
+                        sh "ansible -i ${INVENTORY} mongodb -m ping"
                     }
                 }
             }
@@ -59,10 +60,22 @@ pipeline {
             steps {
                 dir("${ANSIBLE_DIR}") {
                     sshagent(credentials: ['mongo-ssh-key']) {
-                        sh 'ansible-playbook -i ${INVENTORY} playbook.yml'
+                        sh "ansible-playbook -i ${INVENTORY} playbook.yml"
                     }
                 }
             }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed. Check the logs above for errors.'
+        }
+        always {
+            cleanWs() // cleans workspace after build
         }
     }
 }
