@@ -1,0 +1,14 @@
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.backup
+*.tfstate.lock.info
+
+# Ansible
+*.retry
+
+# SSH Keys
+*.pem
+
+# Backup files
+*.backup

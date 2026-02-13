@@ -34,16 +34,16 @@ module "compute" {
   # Bastion SSH IP
   my_ip = "${chomp(data.http.my_ip.response_body)}/32"
 }
+
 ##########################################
 # GENERATE ANSIBLE INVENTORY FILE
 ##########################################
-
 resource "local_file" "ansible_inventory" {
 
   content = <<EOT
 [mongodb]
 %{ for ip in module.compute.mongo_private_ips ~}
-${ip} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/mumbai.pem ansible_ssh_common_args='-o ProxyJump=ubuntu@${module.compute.bastion_public_ip}'
+${ip} ansible_user=ubuntu ansible_ssh_common_args='-o ProxyJump=ubuntu@${module.compute.bastion_public_ip}'
 %{ endfor ~}
 EOT
 

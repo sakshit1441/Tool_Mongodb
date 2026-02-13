@@ -48,7 +48,9 @@ pipeline {
         stage('Ansible Ping Test') {
             steps {
                 dir("${ANSIBLE_DIR}") {
-                    sh 'ansible -i ${INVENTORY} mongodb -m ping'
+                    sshagent(credentials: ['mongo-ssh-key']) {
+                        sh 'ansible -i ${INVENTORY} mongodb -m ping'
+                    }
                 }
             }
         }
@@ -56,7 +58,9 @@ pipeline {
         stage('Run Ansible Playbook') {
             steps {
                 dir("${ANSIBLE_DIR}") {
-                    sh 'ansible-playbook -i ${INVENTORY} playbook.yml'
+                    sshagent(credentials: ['mongo-ssh-key']) {
+                        sh 'ansible-playbook -i ${INVENTORY} playbook.yml'
+                    }
                 }
             }
         }
