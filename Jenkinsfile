@@ -48,10 +48,12 @@ pipeline {
         stage('Ansible Ping Test') {
             steps {
                 dir("${ANSIBLE_DIR}") {
-                    sshagent(credentials: ['mongo-ssh-key']) {
-                        // Use double quotes for proper variable expansion
-                        sh "ansible -i ${INVENTORY} mongodb -m ping"
-                    }
+                    // Using Ansible plugin instead of sshagent
+                    ansible(
+                        inventory: "${INVENTORY}",
+                        module: 'ping',
+                        hosts: 'mongodb'
+                    )
                 }
             }
         }
@@ -59,9 +61,12 @@ pipeline {
         stage('Run Ansible Playbook') {
             steps {
                 dir("${ANSIBLE_DIR}") {
-                    sshagent(credentials: ['mongo-ssh-key']) {
-                        sh "ansible-playbook -i ${INVENTORY} playbook.yml"
-                    }
+                    // Using Ansible plugin
+                    ansiblePlaybook(
+                        playbook: 'playbook.yml',
+                        inventory: "${INVENTORY}",
+                        extras: '-u ubuntu' // optional: use your SSH user
+                    )
                 }
             }
         }
