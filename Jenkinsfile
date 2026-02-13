@@ -5,8 +5,10 @@ pipeline {
         TF_DIR = "Terraform"
         ANSIBLE_DIR = "Ansible"
         INVENTORY = "inventory.ini"
-        ANSIBLE_PRIVATE_KEY = "/home/jenkins/.ssh/mumbai" // path to your SSH key
         SSH_USER = "ubuntu"
+        BASTION_HOST = "13.126.235.185"
+        PRIVATE_HOST = "10.0.11.137"
+        SSH_CREDENTIAL_ID = "jenkins-key-id"  // The SSH key credential you added in Jenkins
     }
 
     stages {
@@ -50,11 +52,12 @@ pipeline {
         stage('Ansible Ping Test') {
             steps {
                 dir("${ANSIBLE_DIR}") {
-                    // Test SSH connectivity to MongoDB instances via bastion
-                    sh """
+                    sshagent(["${SSH_CREDENTIAL_ID}"]) {
+                        sh """
                         ansible -i ${INVENTORY} mongodb -m ping \
-                        -u ${SSH_USER} --private-key=${ANSIBLE_PRIVATE_KEY}
-                    """
+                        -u ${SSH_USER} -o StrictHostKeyChecking=no
+                        """
+                    }
                 }
             }
         }
@@ -62,10 +65,26 @@ pipeline {
         stage('Run Ansible Playbook') {
             steps {
                 dir("${ANSIBLE_DIR}") {
-                    // Run the playbook
-                    sh """
+                    sshagent(["${SSH_CREDENTIAL_ID}"]) {
+                        sh """
                         ansible-playbook -i ${INVENTORY} playbook.yml \
-                        -u ${SSH_USER} --private-key=${ANSIBLE_PRIVATE_KEY}
+                        -u ${SSH_USER} -o StrictHostKeyChecking=no
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Deploy via Bastion SSH') {
+            steps {
+                sshagent(["${SSH_CREDENTIAL_ID}"]) {
+                    sh """
+                    ssh -A -o StrictHostKeyChecking=no -J ${SSH_USER}@${BASTION_HOST} ${SSH_USER}@${PRIVATE_HOST} << 'ENDSSH'
+                        echo "Connected to private server successfully!"
+                        hostname
+                        whoami
+                        # Add your deployment commands here
+                    ENDSSH
                     """
                 }
             }
@@ -80,7 +99,7 @@ pipeline {
             echo 'Pipeline failed. Check the logs above for errors.'
         }
         always {
-            cleanWs() // cleans workspace after build
+            cleanWs() // Clean workspace after build
         }
     }
 }
