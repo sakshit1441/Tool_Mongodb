@@ -11,7 +11,7 @@ resource "aws_security_group" "bastion_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = [var.my_ip]
+    cidr_blocks = ["152.58.17.227/32"]  # <-- Your laptop IP
   }
 
   egress {
@@ -78,7 +78,7 @@ resource "aws_instance" "bastion" {
   instance_type               = "t3.micro"
   subnet_id                   = var.public_subnets[0]
   vpc_security_group_ids      = [aws_security_group.bastion_sg.id]
-  key_name                    = var.key_name
+  key_name                    = "mumbai"  # <-- Your key
   associate_public_ip_address = true
 
   tags = {
@@ -95,7 +95,7 @@ resource "aws_instance" "mongo" {
   instance_type          = var.mongo_instance_type
   subnet_id              = var.private_subnets[count.index]
   vpc_security_group_ids = [aws_security_group.mongo_sg.id]
-  key_name               = var.key_name
+  key_name               = "mumbai"  # <-- Your key
 
   tags = {
     Name = "mongo-instance-${count.index}"
