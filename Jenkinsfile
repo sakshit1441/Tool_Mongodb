@@ -18,7 +18,7 @@ pipeline {
             }
         }
 
-        stage('Terraform Init, Apply & Fetch Outputs') {
+        stage('Terraform Init & Apply') {
             steps {
                 dir("${TF_DIR}") {
                     withCredentials([[
@@ -28,22 +28,35 @@ pipeline {
                         sh '''
                             export AWS_DEFAULT_REGION=${AWS_REGION}
                             echo "Initializing Terraform..."
-                            terraform init
+                            terraform init -input=false
 
                             echo "Applying Terraform..."
-                            terraform apply -auto-approve
+                            terraform apply -auto-approve -input=false
                         '''
+                    }
+                }
+            }
+        }
 
+        stage('Fetch Terraform Outputs') {
+            steps {
+                dir("${TF_DIR}") {
+                    withCredentials([[
+                        $class: 'AmazonWebServicesCredentialsBinding',
+                        credentialsId: 'aws-creds'
+                    ]]) {
                         script {
-                            // Use 'def' for Groovy variables to avoid warnings
+                            // Fetch raw outputs
                             def bastionHost = sh(script: "terraform output -raw bastion_public_ip", returnStdout: true).trim()
                             def mongoHostsJson = sh(script: "terraform output -json mongo_private_ips", returnStdout: true).trim()
+                            
+                            // Parse JSON array
                             def mongoHosts = readJSON text: mongoHostsJson
 
                             echo "Bastion IP: ${bastionHost}"
                             echo "MongoDB Hosts: ${mongoHosts}"
 
-                            // Save to environment for other stages
+                            // Export for other stages
                             env.BASTION_HOST = bastionHost
                             env.MONGO_HOSTS = mongoHosts.join(',')
                         }
@@ -56,8 +69,7 @@ pipeline {
             steps {
                 dir("${ANSIBLE_DIR}") {
                     sshagent([SSH_CREDENTIAL_ID]) {
-                        // Remove invalid -o; inventory already has SSH options
-                        sh "ansible -i ${INVENTORY} mongodb -m ping -u ${SSH_USER}"
+                        sh "ansible -i ${INVENTORY} mongodb -u ${SSH_USER} -m ping"
                     }
                 }
             }
@@ -77,7 +89,7 @@ pipeline {
             steps {
                 sshagent([SSH_CREDENTIAL_ID]) {
                     script {
-                        // Get the first MongoDB host from env variable
+                        // Take first MongoDB host
                         def mongoTarget = env.MONGO_HOSTS.split(',')[0]
                         sh """
                         ssh -A -o StrictHostKeyChecking=no -J ${SSH_USER}@${BASTION_HOST} ${SSH_USER}@${mongoTarget} << 'ENDSSH'
@@ -98,10 +110,10 @@ pipeline {
             echo 'Pipeline completed successfully!'
         }
         failure {
-            echo 'Pipeline failed. Check the logs above for errors.'
+            echo 'Pipeline failed. Check logs above for errors.'
         }
         always {
-            cleanWs() // Clean workspace after build
+            cleanWs()
         }
     }
 }
