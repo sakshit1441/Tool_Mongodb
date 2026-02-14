@@ -4,7 +4,7 @@
   tasks:
     - name: Get bastion instance info
       amazon.aws.ec2_instance_info:
-        region: ap-south-1
+        region: loop: "{{ query('amazon.aws.aws_ec2', 'filters=tag:Name=mongo-instance-* region=ap-south-1') }}"
         filters:
           "tag:Name": mongo-bastion
           instance-state-name: running
