@@ -1,9 +1,9 @@
 terraform {
   backend "s3" {
-    bucket         = "sakshi-mongodb-tfstate"
-    key            = "mongodb/terraform.tfstate"
-    region         = "ap-south-1"
-    dynamodb_table = "terraform-lock"
-    encrypt        = true
+    bucket         = "sakshi-mongodb-tfstate"   # Your S3 bucket
+    key            = "mongodb/terraform.tfstate" # Path inside bucket
+    region         = "ap-south-1"               # AWS region
+    dynamodb_table = "terraform-lock"           # DynamoDB table for locking
+    encrypt        = true                        # Enable server-side encryption
   }
 }
