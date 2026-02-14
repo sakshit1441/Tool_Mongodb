@@ -11,6 +11,14 @@
           instance-state-name: running
       register: bastion_info
 
+    - name: Get MongoDB instances info
+      amazon.aws.ec2_instance_info:
+        region: ap-south-1
+        filters:
+          "tag:Name": mongo-instance-*
+          instance-state-name: running
+      register: mongo_info
+
     - name: Add MongoDB hosts with bastion SSH jump
       add_host:
         name: "{{ item.private_ip_address }}"
@@ -18,7 +26,7 @@
         ansible_user: ubuntu
         ansible_ssh_private_key_file: /var/lib/jenkins/.ssh/mumbai.pem
         ansible_ssh_common_args: "-o ProxyJump=ubuntu@{{ bastion_info.instances[0].public_ip_address }}"
-      loop: "{{ query('amazon.aws.aws_ec2', 'filters=tag:Name=mongo-instance-* region=ap-south-1') }}"
+      loop: "{{ mongo_info.instances }}"
 
 - name: Configure MongoDB
   hosts: mongo_hosts
