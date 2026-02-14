@@ -16,4 +16,4 @@ hostnames:
 compose:
   ansible_host: private_ip_address
   ansible_user: ubuntu
-  ansible_ssh_private_key_file: /home/sakshi/.ssh/mumbai.pem
+  ansible_ssh_private_key_file: /home/ubuntu/.ssh/mumbai.pem
