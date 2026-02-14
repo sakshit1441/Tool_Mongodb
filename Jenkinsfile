@@ -18,37 +18,33 @@ pipeline {
             }
         }
 
-        stage('Terraform Init & Apply') {
+        stage('Terraform Init, Apply & Fetch Outputs') {
             steps {
                 dir("${TF_DIR}") {
-                    // Inject AWS credentials for Terraform
+                    // Inject AWS credentials for all Terraform commands
                     withCredentials([[
                         $class: 'AmazonWebServicesCredentialsBinding',
                         credentialsId: 'aws-creds'
                     ]]) {
                         sh '''
                             export AWS_DEFAULT_REGION=${AWS_REGION}
+
+                            echo "Initializing Terraform..."
                             terraform init
+
+                            echo "Applying Terraform..."
                             terraform apply -auto-approve
                         '''
-                    }
-                }
-            }
-        }
 
-        stage('Fetch Terraform Outputs') {
-            steps {
-                dir("${TF_DIR}") {
-                    script {
-                        // Fetch Bastion public IP
-                        BASTION_HOST = sh(script: "terraform output -raw bastion_public_ip", returnStdout: true).trim()
+                        script {
+                            // Fetch Terraform outputs while AWS credentials are available
+                            BASTION_HOST = sh(script: "terraform output -raw bastion_public_ip", returnStdout: true).trim()
+                            MONGO_HOSTS_JSON = sh(script: "terraform output -json mongo_private_ips", returnStdout: true).trim()
+                            MONGO_HOSTS = readJSON text: MONGO_HOSTS_JSON
 
-                        // Fetch MongoDB private IPs as JSON and convert to Groovy list
-                        MONGO_HOSTS_JSON = sh(script: "terraform output -json mongo_private_ips", returnStdout: true).trim()
-                        MONGO_HOSTS = readJSON text: MONGO_HOSTS_JSON
-
-                        echo "Bastion IP: ${BASTION_HOST}"
-                        echo "MongoDB Hosts: ${MONGO_HOSTS}"
+                            echo "Bastion IP: ${BASTION_HOST}"
+                            echo "MongoDB Hosts: ${MONGO_HOSTS}"
+                        }
                     }
                 }
             }
