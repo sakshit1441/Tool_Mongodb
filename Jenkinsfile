@@ -7,6 +7,7 @@ pipeline {
         INVENTORY = "mongodb_inventory.ini"   // Matches Terraform-generated file
         SSH_USER = "ubuntu"
         SSH_CREDENTIAL_ID = "mongo-ssh-key"   // SSH key stored in Jenkins credentials
+        AWS_REGION = "ap-south-1"
     }
 
     stages {
@@ -20,9 +21,16 @@ pipeline {
         stage('Terraform Init & Apply') {
             steps {
                 dir("${TF_DIR}") {
-                    withAWS(credentials: 'aws-creds', region: 'ap-south-1') {
-                        sh 'terraform init'
-                        sh 'terraform apply -auto-approve'
+                    // Inject AWS credentials for Terraform
+                    withCredentials([[
+                        $class: 'AmazonWebServicesCredentialsBinding',
+                        credentialsId: 'aws-creds'
+                    ]]) {
+                        sh '''
+                            export AWS_DEFAULT_REGION=${AWS_REGION}
+                            terraform init
+                            terraform apply -auto-approve
+                        '''
                     }
                 }
             }
@@ -32,13 +40,13 @@ pipeline {
             steps {
                 dir("${TF_DIR}") {
                     script {
-                        // Fetch Bastion and MongoDB IPs from Terraform
+                        // Fetch Bastion public IP
                         BASTION_HOST = sh(script: "terraform output -raw bastion_public_ip", returnStdout: true).trim()
+
+                        // Fetch MongoDB private IPs as JSON and convert to Groovy list
                         MONGO_HOSTS_JSON = sh(script: "terraform output -json mongo_private_ips", returnStdout: true).trim()
-                        
-                        // Convert JSON array of IPs into Groovy list
                         MONGO_HOSTS = readJSON text: MONGO_HOSTS_JSON
-                        
+
                         echo "Bastion IP: ${BASTION_HOST}"
                         echo "MongoDB Hosts: ${MONGO_HOSTS}"
                     }
@@ -70,14 +78,14 @@ pipeline {
             steps {
                 sshagent([SSH_CREDENTIAL_ID]) {
                     script {
-                        // Deploy to first MongoDB host as example
+                        // Example: deploy to first MongoDB host
                         MONGO_TARGET = MONGO_HOSTS[0]
                         sh """
                         ssh -A -o StrictHostKeyChecking=no -J ${SSH_USER}@${BASTION_HOST} ${SSH_USER}@${MONGO_TARGET} << 'ENDSSH'
                             echo "Connected to private MongoDB server successfully!"
                             hostname
                             whoami
-                            # Add your deployment commands here
+                            # Add deployment commands here
                         ENDSSH
                         """
                     }
