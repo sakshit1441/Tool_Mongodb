@@ -78,6 +78,10 @@ resource "aws_security_group" "mongo_sg" {
   }
 }
 
+resource "aws_iam_instance_profile" "existing_profile" {
+  name = "ec2-ansible-profile"
+  role = "existing-role-name"
+}
 ##########################################################
 # BASTION EC2 (PUBLIC SUBNET)
 ##########################################################
@@ -88,7 +92,7 @@ resource "aws_instance" "bastion" {
   vpc_security_group_ids      = [aws_security_group.bastion_sg.id]
   key_name                    = "mumbai"  # <-- Your key
   associate_public_ip_address = true
-
+  iam_instance_profile        = aws_iam_instance_profile.existing_profile.name
   tags = {
     Name = "mongo-bastion"
   }
