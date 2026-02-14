@@ -2,9 +2,10 @@
   hosts: localhost
   gather_facts: false
   tasks:
+
     - name: Get bastion instance info
       amazon.aws.ec2_instance_info:
-        region: loop: "{{ query('amazon.aws.aws_ec2', 'filters=tag:Name=mongo-instance-* region=ap-south-1') }}"
+        region: ap-south-1
         filters:
           "tag:Name": mongo-bastion
           instance-state-name: running
@@ -15,9 +16,9 @@
         name: "{{ item.private_ip_address }}"
         groups: mongo_hosts
         ansible_user: ubuntu
-        ansible_ssh_private_key_file: ~/.ssh/mumbai.pem
+        ansible_ssh_private_key_file: /var/lib/jenkins/.ssh/mumbai.pem
         ansible_ssh_common_args: "-o ProxyJump=ubuntu@{{ bastion_info.instances[0].public_ip_address }}"
-      loop: "{{ query('aws_ec2', 'filters=tag:Name=mongo-instance-* region=ap-south-1') }}"
+      loop: "{{ query('amazon.aws.aws_ec2', 'filters=tag:Name=mongo-instance-* region=ap-south-1') }}"
 
 - name: Configure MongoDB
   hosts: mongo_hosts
