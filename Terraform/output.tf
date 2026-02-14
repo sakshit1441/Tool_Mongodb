@@ -26,14 +26,9 @@ output "private_subnet_ids" {
 # COMPUTE / MONGODB OUTPUTS
 ##########################################
 
-output "mongo1_private_ip" {
-  description = "Private IP address of MongoDB instance 1"
-  value       = module.mongo_instance_1.private_ip
-}
-
-output "mongo2_private_ip" {
-  description = "Private IP address of MongoDB instance 2"
-  value       = module.mongo_instance_2.private_ip
+output "mongo_private_ips" {
+  description = "Private IP addresses of MongoDB EC2 instances"
+  value       = module.compute.mongo_private_ips
 }
 
 output "mongo_instance_ids" {
@@ -47,7 +42,7 @@ output "mongo_instance_ids" {
 
 output "bastion_public_ip" {
   description = "Public IP address of Bastion host"
-  value       = module.bastion.bastion_public_ip
+  value       = module.compute.bastion_public_ip
 }
 
 ##########################################
