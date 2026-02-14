@@ -8,30 +8,30 @@ pipeline {
     }
 
     stages {
-        stage('Setup Environment') {
-            steps {
-                sh '''
-                # 1. Install necessary Python libraries
-                sudo apt update && sudo apt install -y python3-boto3 python3-botocore
-
-                # 2. Force install AWS collection
-                ansible-galaxy collection install amazon.aws --force
-                '''
-            }
-        }
-
-        stage('Run Ansible Playbook') {
+        stage('Setup & Run Ansible') {
             steps {
                 dir('Ansible') {
                     sh '''
-                    # 3. Create ansible.cfg on the fly to enable plugins
-                    echo "[inventory]" > ansible.cfg
-                    echo "enable_plugins = amazon.aws.aws_ec2" >> ansible.cfg
-                    echo -e "\\n[defaults]" >> ansible.cfg
-                    echo "host_key_checking = False" >> ansible.cfg
-                    echo "deprecation_warnings = False" >> ansible.cfg
+                    # 1. Setup Environment
+                    # Installing boto3 for AWS dynamic inventory support
+                    sudo apt update && sudo apt install -y python3-boto3 python3-botocore
 
-                    # 4. Run the playbook with full path to the key
+                    # Force installing the latest amazon.aws collection
+                    ansible-galaxy collection install amazon.aws --force
+
+                    # 2. Create a clean ansible.cfg
+                    # Using cat <<EOF ensures no hidden characters or shell 'echo -e' interpretation issues
+                    cat <<EOF > ansible.cfg
+[inventory]
+enable_plugins = amazon.aws.aws_ec2
+
+[defaults]
+host_key_checking = False
+deprecation_warnings = False
+EOF
+
+                    # 3. Run Playbook
+                    # Ensure /var/lib/jenkins/mumbai.pem exists on the server with 400 permissions
                     ansible-playbook mongodb-playbook.yml \
                       -i aws_ec2.yaml \
                       -u ubuntu \
