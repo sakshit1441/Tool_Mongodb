@@ -4,12 +4,11 @@ regions:
   - ap-south-1
 
 filters:
-  tag:Name:
-    - mongo-instance-*
+  tag:Name: mongo-instance-*
 
 keyed_groups:
   - key: tags.Name
-    prefix: mongo
+    prefix: Name
 
 hostnames:
   - private-ip-address

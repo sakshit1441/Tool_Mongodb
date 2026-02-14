@@ -11,8 +11,16 @@ resource "aws_security_group" "bastion_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["152.58.17.227/32"]  # <-- Your laptop IP
+    cidr_blocks = ["152.58.17.27/32"]  
   }
+
+  ingress  {
+    description     = "SSH from Bastion to MongoDB"
+    from_port       = 8080
+    to_port         = 8080
+    protocol        = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  } 
 
   egress {
     from_port   = 0
