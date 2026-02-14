@@ -1,35 +1,19 @@
-pipeline {
-    agent any
+stage('Run Ansible Playbook') {
+    steps {
+        dir('Ansible') {
+            sh '''
+            # 1. Config file create karo (Inventory parsing ke liye)
+            echo -e "[inventory]\nenable_plugins = amazon.aws.aws_ec2\n\n[defaults]\nhost_key_checking = False" > ansible.cfg
 
-    environment {
-        ANSIBLE_FORCE_COLOR       = 'true'
-        ANSIBLE_HOST_KEY_CHECKING = 'False'
-        AWS_DEFAULT_REGION        = 'ap-south-1'
-    }
+            # 2. Dependency ensure karo
+            ansible-galaxy collection install amazon.aws
 
-    stages {
-        stage('Workspace Check') {
-            steps {
-                sh 'ls -l'
-            }
-        }
-
-        stage('Ansible Syntax Check') {
-            steps {
-                dir('Ansible') {
-                    // IAM role automatically credentials handle kar lega
-                    sh 'ansible-playbook mongodb-playbook.yml -i aws_ec2.yaml --syntax-check'
-                }
-            }
-        }
-
-        stage('Run Ansible Playbook') {
-            steps {
-                dir('Ansible') {
-                    // Note: .pem file ka path wahi dena jahan Jenkins user usse read kar sake
-                    sh 'ansible-playbook mongodb-playbook.yml -i aws_ec2.yaml -u ubuntu --private-key /var/lib/jenkins/mumbai.pem'
-                }
-            }
+            # 3. Playbook run karo
+            ansible-playbook mongodb-playbook.yml \
+              -i aws_ec2.yaml \
+              -u ubuntu \
+              --private-key /var/lib/jenkins/mumbai.pem
+            '''
         }
     }
 }
