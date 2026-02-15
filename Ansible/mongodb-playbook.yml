@@ -3,32 +3,9 @@
   gather_facts: false
   tasks:
 
-    - name: Get bastion instance info
-      amazon.aws.ec2_instance_info:
-        region: ap-south-1
-        filters:
-          "tag:Name": mongo-bastion
-          instance-state-name: running
-      register: bastion_info
-
-    - name: Get MongoDB instances info
-      amazon.aws.ec2_instance_info:
-        region: ap-south-1
-        filters:
-          "tag:Name": mongo-instance-*
-          instance-state-name: running
-      register: mongo_info
-
-    - name: Add MongoDB hosts with bastion SSH jump
-      add_host:
-        name: "{{ item.private_ip_address }}"
-        groups: mongo_hosts
-        ansible_user: ubuntu
-        ansible_ssh_private_key_file: /var/lib/jenkins/.ssh/mumbai.pem
-        
      
 - name: Configure MongoDB
-  hosts: mongo_hosts
+  hosts: all
   become: yes
   roles:
     - mongodb_role
