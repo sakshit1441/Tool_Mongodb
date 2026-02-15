@@ -1,41 +1,36 @@
 ---
+# ================== Detect OS ==================
+- name: Detect OS
+  ansible.builtin.set_fact:
+    os_type: "{{ ansible_facts['os_family'] | lower }}"
 
-- name: Detect OS Family
-  debug:
-    msg: "OS Family is {{ ansible_facts['os_family'] }}"
-
-#################################################
-# Debian / Ubuntu
-#################################################
-
+# ================== Ubuntu / Debian ==================
 - name: Add MongoDB GPG key (Debian/Ubuntu)
-  ansible.builtin.apt_key:
-    url: "https://pgp.mongodb.com/server-{{ mongodb_version }}.asc"
-    state: present
-  when: ansible_facts["os_family"] == "Debian"
+  ansible.builtin.shell: |
+    curl -fsSL https://pgp.mongodb.com/server-{{ mongodb_version }}.asc | \
+    gpg --dearmor -o /usr/share/keyrings/mongodb-server-{{ mongodb_version }}.gpg
+  args:
+    creates: /usr/share/keyrings/mongodb-server-{{ mongodb_version }}.gpg
+  when: os_type == "debian"
 
 - name: Add MongoDB repository (Debian/Ubuntu)
   ansible.builtin.apt_repository:
-    repo: "deb [ arch=amd64 ] https://repo.mongodb.org/apt/ubuntu {{ ansible_facts['distribution_release'] }}/mongodb-org/{{ mongodb_version }} multiverse"
+    repo: "deb [ arch=amd64 signed-by=/usr/share/keyrings/mongodb-server-{{ mongodb_version }}.gpg ] https://repo.mongodb.org/apt/ubuntu {{ ansible_distribution_release }}/mongodb-org/{{ mongodb_version }} multiverse"
     state: present
-    filename: mongodb-org
-  when: ansible_facts["os_family"] == "Debian"
+  when: os_type == "debian"
 
 - name: Update apt cache
   ansible.builtin.apt:
     update_cache: yes
-  when: ansible_facts["os_family"] == "Debian"
+  when: os_type == "debian"
 
 - name: Install MongoDB (Debian/Ubuntu)
   ansible.builtin.apt:
-    name: mongodb-org
+    name: "{{ mongodb_package }}"
     state: present
-  when: ansible_facts["os_family"] == "Debian"
+  when: os_type == "debian"
 
-#################################################
-# RedHat / Amazon Linux
-#################################################
-
+# ================== CentOS / RedHat ==================
 - name: Add MongoDB repo (RedHat)
   ansible.builtin.yum_repository:
     name: mongodb-org
@@ -44,19 +39,16 @@
     gpgcheck: yes
     enabled: yes
     gpgkey: "https://pgp.mongodb.com/server-{{ mongodb_version }}.asc"
-  when: ansible_facts["os_family"] == "RedHat"
+  when: os_type == "redhat"
 
 - name: Install MongoDB (RedHat)
   ansible.builtin.yum:
-    name: mongodb-org
+    name: "{{ mongodb_package }}"
     state: present
-  when: ansible_facts["os_family"] == "RedHat"
+  when: os_type == "redhat"
 
-#################################################
-# Common Tasks
-#################################################
-
-- name: Deploy MongoDB configuration
+# ================== Configuration ==================
+- name: Copy MongoDB configuration file
   ansible.builtin.template:
     src: mongod.conf.j2
     dest: /etc/mongod.conf
@@ -65,8 +57,9 @@
     mode: '0644'
   notify: restart mongodb
 
-- name: Enable and start MongoDB service
+# ================== Service ==================
+- name: Ensure MongoDB service is enabled and started
   ansible.builtin.service:
     name: "{{ mongodb_service }}"
     state: started
-    enabled: true
+    enabled: yes
