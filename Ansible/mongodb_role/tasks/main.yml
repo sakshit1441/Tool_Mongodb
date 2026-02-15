@@ -26,7 +26,7 @@
 
 - name: Install MongoDB (Debian/Ubuntu)
   ansible.builtin.apt:
-    name: mongodb-org
+    name: "{{ mongodb_package }}"
     state: present
   when: os_type == "debian"
 
@@ -43,7 +43,7 @@
 
 - name: Install MongoDB (RedHat)
   ansible.builtin.yum:
-    name: mongodb-org
+    name: "{{ mongodb_package }}"
     state: present
   when: os_type == "redhat"
 
@@ -60,6 +60,6 @@
 # ================== Service ==================
 - name: Ensure MongoDB service is enabled and started
   ansible.builtin.service:
-    name: mongod
+    name: "{{ mongodb_service }}"
     state: started
     enabled: yes
