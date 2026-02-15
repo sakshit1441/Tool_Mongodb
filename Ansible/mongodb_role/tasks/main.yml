@@ -63,3 +63,68 @@
     name: "{{ mongodb_service }}"
     state: started
     enabled: yes
+---
+# ================== Detect OS ==================
+- name: Detect OS
+  ansible.builtin.set_fact:
+    os_type: "{{ ansible_facts['os_family'] | lower }}"
+
+# ================== Ubuntu / Debian ==================
+- name: Add MongoDB GPG key (Debian/Ubuntu)
+  ansible.builtin.shell: |
+    curl -fsSL https://pgp.mongodb.com/server-{{ mongodb_version }}.asc | \
+    gpg --dearmor -o /usr/share/keyrings/mongodb-server-{{ mongodb_version }}.gpg
+  args:
+    creates: /usr/share/keyrings/mongodb-server-{{ mongodb_version }}.gpg
+  when: os_type == "debian"
+
+- name: Add MongoDB repository (Debian/Ubuntu)
+  ansible.builtin.apt_repository:
+    repo: "deb [ arch=amd64 signed-by=/usr/share/keyrings/mongodb-server-{{ mongodb_version }}.gpg ] https://repo.mongodb.org/apt/ubuntu {{ ansible_distribution_release }}/mongodb-org/{{ mongodb_version }} multiverse"
+    state: present
+  when: os_type == "debian"
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: yes
+  when: os_type == "debian"
+
+- name: Install MongoDB (Debian/Ubuntu)
+  ansible.builtin.apt:
+    name: "{{ mongodb_package }}"
+    state: present
+  when: os_type == "debian"
+
+# ================== CentOS / RedHat ==================
+- name: Add MongoDB repo (RedHat)
+  ansible.builtin.yum_repository:
+    name: mongodb-org
+    description: MongoDB Repository
+    baseurl: "https://repo.mongodb.org/yum/redhat/$releasever/mongodb-org/{{ mongodb_version }}/x86_64/"
+    gpgcheck: yes
+    enabled: yes
+    gpgkey: "https://pgp.mongodb.com/server-{{ mongodb_version }}.asc"
+  when: os_type == "redhat"
+
+- name: Install MongoDB (RedHat)
+  ansible.builtin.yum:
+    name: "{{ mongodb_package }}"
+    state: present
+  when: os_type == "redhat"
+
+# ================== Configuration ==================
+- name: Copy MongoDB configuration file
+  ansible.builtin.template:
+    src: mongod.conf.j2
+    dest: /etc/mongod.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart mongodb
+
+# ================== Service ==================
+- name: Ensure MongoDB service is enabled and started
+  ansible.builtin.service:
+    name: "{{ mongodb_service }}"
+    state: started
+    enabled: yes
