@@ -1,11 +1,21 @@
 ---
+# =========================
+# MongoDB Version
+# =========================
+mongodb_version: "6.0"
 
+# =========================
+# Package
+# =========================
+mongodb_package: "mongodb-org"
+
+# =========================
+# Service Name
+# =========================
 mongodb_service: "mongod"
+
+# =========================
+# Network Configuration
+# =========================
 mongodb_port: 27017
 mongodb_bind_ip: "0.0.0.0"
-
-mongodb_versions:
-  Debian: "6.0"
-  RedHat: "4.4"
-
-mongodb_version: "{{ mongodb_versions[ansible_facts['os_family']] }}"
