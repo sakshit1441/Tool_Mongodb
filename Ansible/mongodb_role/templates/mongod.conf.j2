@@ -1,7 +1,5 @@
 storage:
   dbPath: /var/lib/mongodb
-  journal:
-    enabled: true
 
 net:
   port: {{ mongodb_port }}
@@ -9,8 +7,3 @@ net:
 
 processManagement:
   timeZoneInfo: /usr/share/zoneinfo
-
-systemLog:
-  destination: file
-  path: /var/log/mongodb/mongod.log
-  logAppend: true
