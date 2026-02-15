@@ -1,11 +1,7 @@
-- name: Fetch Bastion IP
-  hosts: all
-  gather_facts: false
-  tasks:
+---
 
-     
 - name: Configure MongoDB
   hosts: all
-  become: yes
+  become: true
   roles:
     - mongodb_role
