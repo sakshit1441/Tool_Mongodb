@@ -26,8 +26,9 @@ pipeline {
             }
         }
 
-        stage('Terraform Infrastructure') {
+        stage('Terraform Infrastructure & Outputs') {
             steps {
+                // Wrap everything in withCredentials so Terraform can access AWS
                 withCredentials([[
                     $class: 'AmazonWebServicesCredentialsBinding',
                     credentialsId: 'aws-creds'
@@ -38,25 +39,27 @@ pipeline {
 
                         script {
                             if (params.TF_ACTION == 'apply') {
+                                // Apply Terraform
                                 sh 'terraform apply -auto-approve -input=false'
+
+                                // Fetch private instance IPs after apply
+                                env.INSTANCE_IP = sh(
+                                    script: "terraform output -raw private_instance_ip",
+                                    returnStdout: true
+                                ).trim()
+                                echo "Private Instance IP: ${env.INSTANCE_IP}"
+
+                                // Fetch other outputs if needed
+                                env.BASTION_IP = sh(
+                                    script: "terraform output -raw bastion_public_ip",
+                                    returnStdout: true
+                                ).trim()
+                                echo "Bastion Public IP: ${env.BASTION_IP}"
                             } else {
+                                // Destroy Terraform infrastructure
                                 sh 'terraform destroy -auto-approve -input=false'
                             }
                         }
-                    }
-                }
-            }
-        }
-
-        stage('Fetch Terraform Outputs') {
-            when { expression { params.TF_ACTION == 'apply' } }
-            steps {
-                dir("${env.TF_DIRECTORY}") {
-                    script {
-                        env.INSTANCE_IP = sh(
-                            script: "terraform output -raw private_instance_ip",
-                            returnStdout: true
-                        ).trim()
                     }
                 }
             }
@@ -106,12 +109,19 @@ pipeline {
         stage('Verify MongoDB Service') {
             when { expression { params.TF_ACTION == 'apply' } }
             steps {
-                dir("${env.ANSIBLE_DIRECTORY}") {
-                    sh """
-                    ansible all -i inventory.ini -m shell -a '
-                        sudo systemctl status mongod || sudo systemctl status mongodb
-                    ' --private-key=/tmp/mongo_key.pem -u ubuntu
-                    """
+                withCredentials([
+                    sshUserPrivateKey(
+                        credentialsId: 'mongo-ssh-key',
+                        keyFileVariable: 'SSH_KEY'
+                    )
+                ]) {
+                    dir("${env.ANSIBLE_DIRECTORY}") {
+                        sh """
+                        ansible all -i inventory.ini -m shell -a '
+                            sudo systemctl status mongod || sudo systemctl status mongodb
+                        ' --private-key=/tmp/mongo_key.pem -u ubuntu
+                        """
+                    }
                 }
             }
         }
