@@ -4,7 +4,6 @@ pipeline {
     environment {
         ANSIBLE_FORCE_COLOR       = 'true'
         ANSIBLE_HOST_KEY_CHECKING = 'False'
-        AWS_DEFAULT_REGION        = 'ap-south-1'
         VENV_DIR                  = "${WORKSPACE}/venv"
     }
 
@@ -12,40 +11,20 @@ pipeline {
 
         stage('Checkout Code') {
             steps {
-                git url: 'https://github.com/sakshit1441/Tool_Mongodb.git', branch: 'main'
+                checkout scm
             }
         }
 
-        stage('Setup Python + Ansible') {
+        stage('Setup Python Environment') {
             steps {
                 sh '''
-                #!/bin/bash
                 python3 -m venv $VENV_DIR
-                source $VENV_DIR/bin/activate
 
-                pip install --upgrade pip
-                pip install boto3 botocore awscli ansible
+                $VENV_DIR/bin/pip install --upgrade pip
+                $VENV_DIR/bin/pip install boto3 botocore awscli ansible
 
-                ansible-galaxy collection install amazon.aws --force
+                $VENV_DIR/bin/ansible-galaxy collection install amazon.aws --force
                 '''
-            }
-        }
-
-        stage('Create Ansible Config') {
-            steps {
-                dir('Ansible') {
-                    sh '''
-                    #!/bin/bash
-                    cat <<EOF > ansible.cfg
-[defaults]
-host_key_checking = False
-deprecation_warnings = False
-
-[inventory]
-enable_plugins = amazon.aws.aws_ec2
-EOF
-                    '''
-                }
             }
         }
 
@@ -53,10 +32,7 @@ EOF
             steps {
                 dir('Ansible') {
                     sh '''
-                    #!/bin/bash
-                    source $VENV_DIR/bin/activate
-
-                    ansible-playbook mongodb-playbook.yml \
+                    $VENV_DIR/bin/ansible-playbook mongodb-playbook.yml \
                       -i aws_ec2.yml \
                       -u ubuntu \
                       --private-key /var/lib/jenkins/.ssh/mumbai.pem
