@@ -80,7 +80,7 @@ resource "aws_security_group" "mongo_sg" {
 
 resource "aws_iam_instance_profile" "existing_profile" {
   name = "ec2-ansible-profile"
-  role = "existing-role-name"
+  role = "Mongo-bastion-role "
 }
 ##########################################################
 # BASTION EC2 (PUBLIC SUBNET)
