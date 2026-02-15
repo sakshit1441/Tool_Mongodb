@@ -8,7 +8,7 @@ filters:
 
 keyed_groups:
   - key: tags.Name
-    prefix: Name
+    prefix: tag_Name
 
 hostnames:
   - private-ip-address
@@ -17,3 +17,4 @@ compose:
   ansible_host: private_ip_address
   ansible_user: ubuntu
   ansible_ssh_private_key_file: /var/lib/jenkins/.ssh/mumbai.pem
+  ansible_python_interpreter: /usr/bin/python3
