@@ -86,7 +86,7 @@ resource "aws_iam_instance_profile" "existing_profile" {
 # BASTION EC2 (PUBLIC SUBNET)
 ##########################################################
 resource "aws_instance" "bastion" {
-  ami                         = ami-0140fe177567fbde4
+  ami                         = "ami-0140fe177567fbde4"
   instance_type               = "t3.micro"
   subnet_id                   = var.public_subnets[0]
   vpc_security_group_ids      = [aws_security_group.bastion_sg.id]
@@ -104,7 +104,7 @@ resource "aws_instance" "bastion" {
 resource "aws_instance" "mongo" {
   count                  = length(var.private_subnets)
   ami                    = var.mongo_ami
-  instance_type          = c7i-flex.large
+  instance_type          = "c7i-flex.large"
   subnet_id              = var.private_subnets[count.index]
   vpc_security_group_ids = [aws_security_group.mongo_sg.id]
   key_name               = "mumbai"  # <-- Your key
