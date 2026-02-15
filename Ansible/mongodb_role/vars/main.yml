@@ -1,8 +1,40 @@
 ---
-mongodb_version: "5.0"
+# =========================
+# MongoDB Version
+# =========================
+mongodb_version: "6.0"
+
+# =========================
+# Service Configuration
+# =========================
 mongodb_service: "mongod"
+
+# =========================
+# Network Configuration
+# =========================
 mongodb_port: 27017
 mongodb_bind_ip: "0.0.0.0"
-mongodb_version_ubuntu: 6.0
-mongodb_version_redhat: 4.2   
 
+# =========================
+# Package Name
+# =========================
+mongodb_package: "mongodb-org"
+
+# =========================
+# Data & Log Paths
+# =========================
+mongodb_data_path: "/var/lib/mongodb"
+mongodb_log_path: "/var/log/mongodb/mongod.log"
+
+# =========================
+# Authentication (Optional)
+# =========================
+mongodb_enable_auth: false
+mongodb_admin_user: "admin"
+mongodb_admin_password: "admin123"
+
+# =========================
+# Replica Set (Optional)
+# =========================
+mongodb_replica_set_name: "rs0"
+mongodb_replica_members: []
