@@ -28,14 +28,12 @@ pipeline {
 
         stage('Terraform Infrastructure') {
             steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'aws-creds',
-                        usernameVariable: 'AWS_ACCESS_KEY_ID',
-                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-                    )
-                ]) {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-creds'
+                ]]) {
                     dir("${env.TF_DIRECTORY}") {
+
                         sh 'terraform init -input=false -migrate-state -force-copy'
 
                         script {
@@ -53,20 +51,12 @@ pipeline {
         stage('Fetch Terraform Outputs') {
             when { expression { params.TF_ACTION == 'apply' } }
             steps {
-                script {
-                    withCredentials([
-                        usernamePassword(
-                            credentialsId: 'aws-keys',
-                            usernameVariable: 'AWS_ACCESS_KEY_ID',
-                            passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-                        )
-                    ]) {
-                        dir("${env.TF_DIRECTORY}") {
-                            env.INSTANCE_IP = sh(
-                                script: "terraform output -raw private_instance_ip",
-                                returnStdout: true
-                            ).trim()
-                        }
+                dir("${env.TF_DIRECTORY}") {
+                    script {
+                        env.INSTANCE_IP = sh(
+                            script: "terraform output -raw private_instance_ip",
+                            returnStdout: true
+                        ).trim()
                     }
                 }
             }
@@ -100,6 +90,7 @@ pipeline {
                     )
                 ]) {
                     dir("${env.ANSIBLE_DIRECTORY}") {
+
                         sh "cp ${SSH_KEY} /tmp/mongo_key.pem && chmod 400 /tmp/mongo_key.pem"
 
                         sh """
